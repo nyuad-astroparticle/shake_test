@@ -301,3 +301,39 @@ def checkFolder(folder_path):
         print(f"Folder '{folder_path}' created.")
     else:
         print(f"Folder '{folder_path}' already exists.")
+
+
+def findAmplitudesFFT(data, tolerance=0.01, sampling_rate=4000):
+    """
+    This function gives amplitude values computed using the fft
+
+    **Input**
+
+    *data* is the original sinesweep dataframe read using read_sdi_data
+
+    *freqlist* is the list of the sinusoidal frequencies sweeped
+
+    *sampling_rate* the sampling rate
+
+    *tolerance* since the algorithm looks for a maximum closeby a peak, this define the interval. Default 1%
+
+    **Output**
+    
+    """
+    data = data.dropna()
+
+    sine_frequencies = np.array(giveLogSpaceFarray(20, 2000, 50))   
+
+    acceleration_g = data['Acceleration (g)']-1
+    N = len(acceleration_g)
+    fft_result = np.fft.fft(acceleration_g)
+
+    freq= np.fft.fftfreq(N, d=1/sampling_rate)[:N//2]
+    fft_vals = 2.0/N * np.abs(fft_result[0:N//2])*len(sine_frequencies)
+
+    peak_vals = []
+    for s_f in sine_frequencies:
+        mask = (freq > s_f* (1-tolerance)) & (freq < s_f*(1+tolerance))
+        peak_vals.append(np.max(fft_vals[mask]))
+
+    return peak_vals
